@@ -4,6 +4,7 @@ import { ActiveSection } from './types';
 import CampaignGenerator from './components/CampaignGenerator';
 import ReachCalculator from './components/ReachCalculator';
 import Footer from './components/Footer';
+import AdminDashboard from './components/AdminDashboard';
 
 // Icons
 import { 
@@ -26,7 +27,9 @@ import {
   Eye,
   CheckCircle,
   ExternalLink,
-  ChevronLeft
+  ChevronLeft,
+  Lock,
+  Settings
 } from 'lucide-react';
 
 export default function App() {
@@ -36,6 +39,10 @@ export default function App() {
   const [portfolioFilter, setPortfolioFilter] = useState<'all' | 'outdoor' | 'digital' | 'branding' | 'video'>('all');
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
 
+  // Dynamic configuration state
+  const [config, setConfig] = useState<any>(null);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+
   // Contact Form state
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -44,8 +51,34 @@ export default function App() {
   const [contactSuccess, setContactSuccess] = useState(false);
   const [contactLoading, setContactLoading] = useState(false);
 
-  const t: TranslationSet = lang === 'ar' ? arTranslations : enTranslations;
+  // Fetch config on mount
+  useEffect(() => {
+    fetch("/api/config")
+      .then(res => res.json())
+      .then(data => {
+        if (data) setConfig(data);
+      })
+      .catch(err => console.error("Error loading live config:", err));
+  }, []);
+
+  // Set the dynamic translations
+  const defaultTranslations = lang === 'ar' ? arTranslations : enTranslations;
+  const t: TranslationSet = (config?.translations?.[lang]) 
+    ? { ...defaultTranslations, ...config.translations[lang] }
+    : defaultTranslations;
+
   const isRtl = lang === 'ar';
+
+  // Apply dynamic theme variables to document root
+  useEffect(() => {
+    if (config?.theme) {
+      const primary = config.theme.primaryColor || '#ff5c35';
+      const secondary = config.theme.secondaryColor || '#e2b053';
+      document.documentElement.style.setProperty('--color-brand-orange', primary);
+      document.documentElement.style.setProperty('--color-brand-orange-light', primary + 'dd');
+      document.documentElement.style.setProperty('--color-brand-gold', secondary);
+    }
+  }, [config]);
 
   // Automatically update HTML document attributes for RTL support
   useEffect(() => {
@@ -74,64 +107,83 @@ export default function App() {
   };
 
   // Portfolio items database
-  const portfolioItems = [
-    {
-      id: 'yasmine',
-      title: t.portItem1Title,
-      desc: t.portItem1Desc,
-      category: 'outdoor',
-      tag: t.portTagOutdoor,
-      image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
-      stat: isRtl ? '+4.2 مليون مشاهدة طرقية' : '+4.2M road impressions',
-      client: isRtl ? 'ريادة للعطور الشامية' : 'Riyada Levantine Perfumes',
-      year: '2026',
-      details: isRtl 
-        ? 'تم تركيب لوحات بيلبورد ذكية ذات تصميم ثلاثي الأبعاد في أهم تقاطعات دمشق (أوتستراد المزة، ساحة الأمويين) مجهزة بتقنية دفع الروائح الدقيقة لبث رائحة ياسمين خفيفة تجذب المارة فوراً.'
-        : 'Smart 3D billboards installed in prime Damascus intersections (Mezzeh, Umayyad Square) equipped with custom scent diffusers emitting jasmine aroma to captivate citizens.'
-    },
-    {
-      id: 'hamwi',
-      title: t.portItem2Title,
-      desc: t.portItem2Desc,
-      category: 'branding',
-      tag: t.portTagBrand,
-      image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80',
-      stat: isRtl ? '+180% نمو في المبيعات' : '+180% sales growth',
-      client: isRtl ? 'مجموعة بن الحموي العريقة' : 'Hamwi Coffee Group',
-      year: '2025',
-      details: isRtl 
-        ? 'قمنا بإعادة صياغة الهوية البصرية للعلامة بالكامل، وتحديث تغليف أكياس القهوة السورية والعلب المعدنية الفاخرة بطابع يجمع الحداثة بعبق التاريخ، مما جذب جيل الشباب لاقتناء المنتج.'
-        : 'Rebuilt the entire brand design, packaging books, and premium tin cans, combining modern styles with historical warmth to successfully target young millennials.'
-    },
-    {
-      id: 'captain',
-      title: t.portItem3Title,
-      desc: t.portItem3Desc,
-      category: 'digital',
-      tag: t.portTagDigital,
-      image: 'https://images.unsplash.com/photo-1549576490-b0b4831da60a?auto=format&fit=crop&w=800&q=80',
-      stat: isRtl ? 'نصف مليون تحميل شهري' : '500k monthly downloads',
-      client: isRtl ? 'تطبيق كابتن للتوصيل' : 'Captain Cab Tech',
-      year: '2025',
-      details: isRtl 
-        ? 'حملة رقمية متكاملة شملت إنتاج فيديوهات فكاهية قصيرة مستلهمة من واقع المواطن السوري اليومي بالشارع، مع إعلانات ممولة مستهدفة بدقة حققت صدى واسعاً وتضاعف نسبة التحميل.'
-        : 'Integrated digital campaign producing humorous TikTok reels inspired by real daily Syrian commuting struggles, paired with hyper-targeted mobile advertisements.'
-    },
-    {
-      id: 'canning',
-      title: t.portItem4Title,
-      desc: t.portItem4Desc,
-      category: 'video',
-      tag: t.portTagVideo,
-      image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
-      stat: isRtl ? '+8 مليون مشاهدة على الويب' : '+8M web views',
-      client: isRtl ? 'الشركة السورية للكونسروة' : 'Syrian Canning Company',
-      year: '2026',
-      details: isRtl 
-        ? 'فيلم إعلاني تلفزيوني دافئ يركز على قيمة التكاتف ولمة العائلة حول المائدة الرمضانية في الأحياء القديمة، وتم عرضه في القنوات الفضائية والويب مع موسيقى شامية أصيلة لاقت رواجاً كبيراً.'
-        : 'A warm cinematic commercial emphasizing the beautiful essence of Syrian family gatherings during Ramadan. Broadcasted via pan-Arab satellite TV channels.'
+  const getPortfolioItems = () => {
+    if (config?.portfolioItems && config.portfolioItems.length > 0) {
+      return config.portfolioItems.map((item: any) => ({
+        id: item.id,
+        title: lang === 'ar' ? item.titleAr : item.titleEn,
+        desc: lang === 'ar' ? item.descAr : item.descEn,
+        category: item.category,
+        tag: lang === 'ar' ? item.tagAr : item.tagEn,
+        image: item.image,
+        stat: lang === 'ar' ? item.statAr : item.statEn,
+        client: lang === 'ar' ? item.clientAr : item.clientEn,
+        year: item.year,
+        details: lang === 'ar' ? item.detailsAr : item.detailsEn
+      }));
     }
-  ];
+
+    return [
+      {
+        id: 'yasmine',
+        title: t.portItem1Title,
+        desc: t.portItem1Desc,
+        category: 'outdoor',
+        tag: t.portTagOutdoor,
+        image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+        stat: isRtl ? '+4.2 مليون مشاهدة طرقية' : '+4.2M road impressions',
+        client: isRtl ? 'ريادة للعطور الشامية' : 'Riyada Levantine Perfumes',
+        year: '2026',
+        details: isRtl 
+          ? 'تم تركيب لوحات بيلبورد ذكية ذات تصميم ثلاثي الأبعاد في أهم تقاطعات دمشق (أوتستراد المزة، ساحة الأمويين) مجهزة بتقنية دفع الروائح الدقيقة لبث رائحة ياسمين خفيفة تجذب المارة فوراً.'
+          : 'Smart 3D billboards installed in prime Damascus intersections (Mezzeh, Umayyad Square) equipped with custom scent diffusers emitting jasmine aroma to captivate citizens.'
+      },
+      {
+        id: 'hamwi',
+        title: t.portItem2Title,
+        desc: t.portItem2Desc,
+        category: 'branding',
+        tag: t.portTagBrand,
+        image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80',
+        stat: isRtl ? '+180% نمو في المبيعات' : '+180% sales growth',
+        client: isRtl ? 'مجموعة بن الحموي العريقة' : 'Hamwi Coffee Group',
+        year: '2025',
+        details: isRtl 
+          ? 'قمنا بإعادة صياغة الهوية البصرية للعلامة بالكامل، وتحديث تغليف أكياس القهوة السورية والعلب المعدنية الفاخرة بطابع يجمع الحداثة بعبق التاريخ، مما جذب جيل الشباب لاقتناء المنتج.'
+          : 'Rebuilt the entire brand design, packaging books, and premium tin cans, combining modern styles with historical warmth to successfully target young millennials.'
+      },
+      {
+        id: 'captain',
+        title: t.portItem3Title,
+        desc: t.portItem3Desc,
+        category: 'digital',
+        tag: t.portTagDigital,
+        image: 'https://images.unsplash.com/photo-1549576490-b0b4831da60a?auto=format&fit=crop&w=800&q=80',
+        stat: isRtl ? 'نصف مليون تحميل شهري' : '500k monthly downloads',
+        client: isRtl ? 'تطبيق كابتن للتوصيل' : 'Captain Cab Tech',
+        year: '2025',
+        details: isRtl 
+          ? 'حملة رقمية متكاملة شملت إنتاج فيديوهات فكاهية قصيرة مستلهمة من واقع المواطن السوري اليومي بالشارع، مع إعلانات ممولة مستهدفة بدقة حققت صدى واسعاً وتضاعف نسبة التحميل.'
+          : 'Integrated digital campaign producing humorous TikTok reels inspired by real daily Syrian commuting struggles, paired with hyper-targeted mobile advertisements.'
+      },
+      {
+        id: 'canning',
+        title: t.portItem4Title,
+        desc: t.portItem4Desc,
+        category: 'video',
+        tag: t.portTagVideo,
+        image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
+        stat: isRtl ? '+8 مليون مشاهدة على الويب' : '+8M web views',
+        client: isRtl ? 'الشركة السورية للكونسروة' : 'Syrian Canning Company',
+        year: '2026',
+        details: isRtl 
+          ? 'فيلم إعلاني تلفزيوني دافئ يركز على قيمة التكاتف ولمة العائلة حول المائدة الرمضانية في الأحياء القديمة، وتم عرضه في القنوات الفضائية والويب مع موسيقى شامية أصيلة لاقت رواجاً كبيراً.'
+          : 'A warm cinematic commercial emphasizing the beautiful essence of Syrian family gatherings during Ramadan. Broadcasted via pan-Arab satellite TV channels.'
+      }
+    ];
+  };
+
+  const portfolioItems = getPortfolioItems();
 
   const filteredPortfolio = portfolioFilter === 'all' 
     ? portfolioItems 
@@ -201,6 +253,17 @@ export default function App() {
             >
               <Globe size={13} className="text-brand-gold animate-spin" style={{ animationDuration: '8s' }} />
               <span>{isRtl ? 'English' : 'العربية'}</span>
+            </button>
+
+            {/* Admin Dashboard Portal Trigger Button */}
+            <button
+              id="admin-portal-open-btn"
+              onClick={() => setIsAdminOpen(true)}
+              className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-200 border border-white/5 hover:border-white/10 hover:text-brand-orange transition-all duration-300 flex items-center gap-1.5 cursor-pointer"
+              title={isRtl ? "بوابة الإدارة والمشرف" : "Supervisor Administration Portal"}
+            >
+              <Lock size={12} className="text-brand-gold" />
+              <span>{isRtl ? "لوحة التحكم" : "Admin Panel"}</span>
             </button>
 
             {/* Quick Consultation CTA */}
@@ -427,103 +490,88 @@ export default function App() {
 
           {/* Services Cards Bento-like Grid with interactive details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            
-            {/* Service 1 */}
-            <div className="bg-brand-slate/40 border border-white/5 rounded-2xl p-8 hover:border-brand-orange/40 transition-all duration-300 hover:shadow-xl hover:shadow-brand-orange/5 group relative overflow-hidden flex flex-col justify-between min-h-[280px]">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-brand-orange/10 rounded-bl-full pointer-events-none transition-all group-hover:scale-125"></div>
-              
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-brand-orange/10 text-brand-orange flex items-center justify-center mb-6">
-                  <Map size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
-                  <span>{t.serv1Title}</span>
-                </h3>
-                <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
-                  {t.serv1Desc}
-                </p>
-              </div>
+            {(() => {
+              const activeServices = config?.services && config.services.length > 0
+                ? config.services
+                : [
+                    {
+                      id: 'serv1',
+                      titleAr: t.serv1Title,
+                      titleEn: 'Premium Billboards & Outdoor Media',
+                      descAr: t.serv1Desc,
+                      descEn: 'Strategic placement of digital and steel billboards across prime Syrian highways and squares.',
+                      icon: 'Map',
+                      subtitleAr: 'شوارع حيوية: المزة، الأمويين، الشعلان',
+                      subtitleEn: 'Key Spots: Mezzeh, Umayyad, Shaalan'
+                    },
+                    {
+                      id: 'serv2',
+                      titleAr: t.serv2Title,
+                      titleEn: 'Dynamic AI Campaigns & Digital Marketing',
+                      descAr: t.serv2Desc,
+                      descEn: 'Maximize performance with hyper-targeted digital advertisement strategies and automated campaigns.',
+                      icon: 'Sparkles',
+                      subtitleAr: 'بالهوية والروح السورية المحببة',
+                      subtitleEn: 'Culturally Relatable Syrian Content'
+                    },
+                    {
+                      id: 'serv3',
+                      titleAr: t.serv3Title,
+                      titleEn: 'Branding & Corporate Identity',
+                      descAr: t.serv3Desc,
+                      descEn: 'Design timeless brand elements, packaging systems, and corporate guidelines.',
+                      icon: 'Layers',
+                      subtitleAr: 'كتيب الهوية وتصاميم التغليف',
+                      subtitleEn: 'Full Brand Books & Premium Packaging'
+                    },
+                    {
+                      id: 'serv4',
+                      titleAr: t.serv4Title,
+                      titleEn: 'Cinematic Production & TV Ads',
+                      descAr: t.serv4Desc,
+                      descEn: 'Cinematic video storytelling tailored for local culture with premium audio production.',
+                      icon: 'Tv',
+                      subtitleAr: 'تصوير سينمائي ومونتاج احترافي',
+                      subtitleEn: 'Cinematic Production with sound design'
+                    }
+                  ];
 
-              <div className="pt-6 border-t border-white/5 mt-6 flex justify-between items-center">
-                <span className="text-[11px] text-brand-gold font-bold">{isRtl ? 'شوارع حيوية: المزة، الأمويين، الشعلان' : 'Key Spots: Mezzeh, Umayyad, Shaalan'}</span>
-                <span className="text-xs text-gray-500 group-hover:text-brand-orange transition flex items-center gap-1">
-                  {isRtl ? 'احجز بيلبورد' : 'Book Billboard'} <ArrowRight size={12} className="transform rotate-180" />
-                </span>
-              </div>
-            </div>
+              return activeServices.map((service: any) => {
+                const title = lang === 'ar' ? service.titleAr : service.titleEn;
+                const desc = lang === 'ar' ? service.descAr : service.descEn;
+                const subtitle = lang === 'ar' ? service.subtitleAr : service.subtitleEn;
 
-            {/* Service 2 */}
-            <div className="bg-brand-slate/40 border border-white/5 rounded-2xl p-8 hover:border-brand-orange/40 transition-all duration-300 hover:shadow-xl hover:shadow-brand-orange/5 group relative overflow-hidden flex flex-col justify-between min-h-[280px]">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-brand-gold/10 rounded-bl-full pointer-events-none transition-all group-hover:scale-125"></div>
-              
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-brand-gold/10 text-brand-gold flex items-center justify-center mb-6">
-                  <Sparkles size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
-                  <span>{t.serv2Title}</span>
-                </h3>
-                <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
-                  {t.serv2Desc}
-                </p>
-              </div>
+                let IconComponent = Sparkles;
+                if (service.icon === 'Map') IconComponent = Map;
+                else if (service.icon === 'Layers') IconComponent = Layers;
+                else if (service.icon === 'Tv') IconComponent = Tv;
 
-              <div className="pt-6 border-t border-white/5 mt-6 flex justify-between items-center">
-                <span className="text-[11px] text-teal-400 font-bold">{isRtl ? 'بالهوية والروح السورية المحببة' : 'Culturally Relatable Syrian Content'}</span>
-                <span className="text-xs text-gray-500 group-hover:text-brand-orange transition flex items-center gap-1">
-                  {isRtl ? 'صمم حملتك' : 'Design Campaign'} <ArrowRight size={12} className="transform rotate-180" />
-                </span>
-              </div>
-            </div>
+                return (
+                  <div key={service.id} className="bg-brand-slate/40 border border-white/5 rounded-2xl p-8 hover:border-brand-orange/40 transition-all duration-300 hover:shadow-xl hover:shadow-brand-orange/5 group relative overflow-hidden flex flex-col justify-between min-h-[280px]">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-brand-orange/10 rounded-bl-full pointer-events-none transition-all group-hover:scale-125"></div>
+                    
+                    <div>
+                      <div className="w-12 h-12 rounded-xl bg-brand-orange/10 text-brand-orange flex items-center justify-center mb-6">
+                        <IconComponent size={24} />
+                      </div>
+                      <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                        <span>{title}</span>
+                      </h3>
+                      <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
+                        {desc}
+                      </p>
+                    </div>
 
-            {/* Service 3 */}
-            <div className="bg-brand-slate/40 border border-white/5 rounded-2xl p-8 hover:border-brand-orange/40 transition-all duration-300 hover:shadow-xl hover:shadow-brand-orange/5 group relative overflow-hidden flex flex-col justify-between min-h-[280px]">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/10 rounded-bl-full pointer-events-none transition-all group-hover:scale-125"></div>
-              
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center mb-6">
-                  <Layers size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
-                  <span>{t.serv3Title}</span>
-                </h3>
-                <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
-                  {t.serv3Desc}
-                </p>
-              </div>
-
-              <div className="pt-6 border-t border-white/5 mt-6 flex justify-between items-center">
-                <span className="text-[11px] text-brand-orange font-bold">{isRtl ? 'كتيب الهوية وتصاميم التغليف' : 'Full Brand Books & Premium Packaging'}</span>
-                <span className="text-xs text-gray-500 group-hover:text-brand-orange transition flex items-center gap-1">
-                  {isRtl ? 'تصفح البورتفوليو' : 'View Designs'} <ArrowRight size={12} className="transform rotate-180" />
-                </span>
-              </div>
-            </div>
-
-            {/* Service 4 */}
-            <div className="bg-brand-slate/40 border border-white/5 rounded-2xl p-8 hover:border-brand-orange/40 transition-all duration-300 hover:shadow-xl hover:shadow-brand-orange/5 group relative overflow-hidden flex flex-col justify-between min-h-[280px]">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-bl-full pointer-events-none transition-all group-hover:scale-125"></div>
-              
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-6">
-                  <Tv size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
-                  <span>{t.serv4Title}</span>
-                </h3>
-                <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
-                  {t.serv4Desc}
-                </p>
-              </div>
-
-              <div className="pt-6 border-t border-white/5 mt-6 flex justify-between items-center">
-                <span className="text-[11px] text-brand-gold font-bold">{isRtl ? 'تصوير سينمائي ومونتاج احترافي' : 'Cinematic Production with sound design'}</span>
-                <span className="text-xs text-gray-500 group-hover:text-brand-orange transition flex items-center gap-1">
-                  {isRtl ? 'احجز استوديو التصوير' : 'Book Video Production'} <ArrowRight size={12} className="transform rotate-180" />
-                </span>
-              </div>
-            </div>
-
+                    <div className="pt-6 border-t border-white/5 mt-6 flex justify-between items-center">
+                      <span className="text-[11px] text-brand-gold font-bold">{subtitle}</span>
+                      <span className="text-xs text-gray-500 group-hover:text-brand-orange transition flex items-center gap-1">
+                        {isRtl ? 'حملة ترويجية' : 'Launch Campaign'} <ArrowRight size={12} className="transform rotate-180" />
+                      </span>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
           </div>
         </section>
 
@@ -929,6 +977,15 @@ export default function App() {
 
       {/* FOOTER */}
       <Footer t={t} isRtl={isRtl} onNavigate={setActiveSection} />
+
+      {/* ADMIN CONTROL PANEL OVERLAY */}
+      <AdminDashboard
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+        currentConfig={config}
+        onConfigUpdated={(newConfig) => setConfig(newConfig)}
+        isRtl={isRtl}
+      />
 
     </div>
   );
