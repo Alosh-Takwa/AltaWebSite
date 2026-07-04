@@ -1,0 +1,6 @@
+{
+  "name": "Alta Advertising Agency",
+  "description": "الموقع الرسمي التفاعلي لشركة التا (Alta) للخدمات الإعلانية والتسويقية المتكاملة في سوريا والوطن العربي. يتميز بمولد أفكار إعلانية مبتكرة مدعوم بالذكاء الاصطناعي وبورتفوليو احترافي.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
