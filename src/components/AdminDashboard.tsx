@@ -181,6 +181,31 @@ export default function AdminDashboard({
     setActionSuccess("");
   };
 
+  // Handle local logo file upload
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Limit to 4MB for safe, responsive handling
+    if (file.size > 4 * 1024 * 1024) {
+      alert(isRtl 
+        ? "حجم الشعار كبير جداً! يرجى رفع ملف صورة بحجم أقل من 4 ميجابايت لضمان الاستقرار وسرعة التحميل." 
+        : "Logo file size is too large! Please upload an image smaller than 4MB."
+      );
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64String = event.target?.result as string;
+      setTheme(prev => ({ ...prev, logoImageUrl: base64String }));
+    };
+    reader.onerror = () => {
+      alert(isRtl ? "فشل قراءة الملف!" : "Error reading file!");
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Change Admin Password API Call
   const handlePasswordChangeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -429,13 +454,20 @@ export default function AdminDashboard({
           <div className="max-w-md w-full bg-brand-slate border border-white/10 rounded-2xl p-8 shadow-2xl space-y-6">
             
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-orange to-brand-gold flex items-center justify-center font-black text-white text-2xl mx-auto shadow-lg shadow-brand-orange/20 animate-pulse overflow-hidden">
-                {theme.logoImageUrl ? (
-                  <img src={theme.logoImageUrl} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                ) : (
-                  theme.logoLetter
-                )}
-              </div>
+              {theme.logoImageUrl ? (
+                <div className="h-16 w-auto flex items-center justify-center mx-auto">
+                  <img 
+                    src={theme.logoImageUrl} 
+                    alt="Logo" 
+                    className="h-full w-auto max-w-[200px] object-contain" 
+                    referrerPolicy="no-referrer" 
+                  />
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-orange to-brand-gold flex items-center justify-center font-black text-white text-2xl mx-auto shadow-lg shadow-brand-orange/20 animate-pulse overflow-hidden">
+                  {theme.logoLetter}
+                </div>
+              )}
               <h2 className="text-xl font-black text-white">{isRtl ? "تسجيل دخول لوحة التحكم" : "Administrator Sign In"}</h2>
               <p className="text-xs text-gray-400 leading-relaxed">
                 {isRtl ? "يرجى إدخال بيانات المشرف لإدارة وتحديث محتوى وكالة التا للإعلان مباشرة." : "Enter supervisor credentials to perform live updates."}
@@ -675,17 +707,75 @@ export default function AdminDashboard({
                     />
                   </div>
 
-                  {/* Logo Image URL */}
-                  <div className="bg-brand-dark/40 border border-white/5 p-4 rounded-xl space-y-3">
-                    <label className="block text-xs font-bold text-gray-300">{isRtl ? "رابط صورة الشعار الخارجية (Logo Image URL)" : "External Logo Image URL"}</label>
-                    <input
-                      id="logo-image-url-input"
-                      type="text"
-                      placeholder="https://example.com/logo.png"
-                      value={theme.logoImageUrl || ""}
-                      onChange={(e) => setTheme({ ...theme, logoImageUrl: e.target.value })}
-                      className="w-full bg-brand-dark border border-white/10 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none placeholder-gray-600"
-                    />
+                  {/* Logo Image (Local Upload & URL) */}
+                  <div className="bg-brand-dark/40 border border-white/5 p-4 rounded-xl space-y-4 md:col-span-2">
+                    <label className="block text-xs font-bold text-brand-gold uppercase tracking-wider">
+                      {isRtl ? "شعار الوكالة (اللوغو)" : "Agency Logo Image"}
+                    </label>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Left: File upload option */}
+                      <div className="border border-white/10 border-dashed rounded-xl p-4 flex flex-col items-center justify-center text-center space-y-2 bg-brand-dark/20 hover:bg-brand-dark/40 transition duration-300 relative group min-h-[110px]">
+                        <input
+                          id="logo-file-upload-input"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                        />
+                        <div className="w-10 h-10 rounded-lg bg-brand-orange/10 text-brand-orange flex items-center justify-center group-hover:scale-110 transition duration-300">
+                          <Image size={20} />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold text-white">
+                            {isRtl ? "اضغط لرفع لوغو من جهازك" : "Click to upload local logo"}
+                          </p>
+                          <p className="text-[10px] text-gray-500">
+                            PNG, JPG, SVG (Max 4MB)
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right: URL option & Live Preview */}
+                      <div className="space-y-3 flex flex-col justify-between">
+                        <div>
+                          <label className="block text-[11px] text-gray-400 mb-1.5">
+                            {isRtl ? "أو أدخل رابط صورة خارجي:" : "Or enter external image URL:"}
+                          </label>
+                          <input
+                            id="logo-image-url-input"
+                            type="text"
+                            placeholder="https://example.com/logo.png"
+                            value={theme.logoImageUrl && !theme.logoImageUrl.startsWith("data:") ? theme.logoImageUrl : ""}
+                            onChange={(e) => setTheme({ ...theme, logoImageUrl: e.target.value })}
+                            className="w-full bg-brand-dark border border-white/10 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none placeholder-gray-600"
+                          />
+                        </div>
+
+                        {theme.logoImageUrl && (
+                          <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded bg-brand-dark overflow-hidden flex items-center justify-center">
+                                <img src={theme.logoImageUrl} alt="Logo preview" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                              </div>
+                              <span className="text-[10px] text-gray-400">
+                                {theme.logoImageUrl.startsWith("data:") 
+                                  ? (isRtl ? "شعار مرفوع محلياً" : "Locally uploaded logo")
+                                  : (isRtl ? "شعار عبر رابط خارجي" : "External link logo")}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setTheme({ ...theme, logoImageUrl: "" })}
+                              className="p-1 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 transition cursor-pointer"
+                              title={isRtl ? "إزالة الصورة" : "Remove Image"}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Brand Titles */}

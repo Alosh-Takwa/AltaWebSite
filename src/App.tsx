@@ -198,13 +198,20 @@ export default function App() {
           
           {/* Logo & Identity */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-orange to-brand-gold flex items-center justify-center font-black text-white text-base tracking-wider shadow-lg shadow-brand-orange/20 animate-pulse overflow-hidden">
-              {config?.theme?.logoImageUrl ? (
-                <img src={config.theme.logoImageUrl} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-              ) : (
-                config?.theme?.logoLetter || 'A'
-              )}
-            </div>
+            {config?.theme?.logoImageUrl ? (
+              <div className="h-10 w-auto flex items-center justify-center">
+                <img 
+                  src={config.theme.logoImageUrl} 
+                  alt="Logo" 
+                  className="h-full w-auto max-w-[150px] object-contain" 
+                  referrerPolicy="no-referrer" 
+                />
+              </div>
+            ) : (
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-orange to-brand-gold flex items-center justify-center font-black text-white text-base tracking-wider shadow-lg shadow-brand-orange/20 animate-pulse overflow-hidden">
+                {config?.theme?.logoLetter || 'A'}
+              </div>
+            )}
             <div className="flex flex-col text-right">
               <span className="text-sm md:text-base font-black text-white tracking-widest uppercase leading-none">
                 {isRtl ? (config?.theme?.logoNameAr || t.navBrand) : (config?.theme?.logoNameEn || t.navBrand)}
