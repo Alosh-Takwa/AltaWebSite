@@ -190,7 +190,7 @@ export default function App() {
     : portfolioItems.filter(item => item.category === portfolioFilter);
 
   return (
-    <div className="min-h-screen bg-brand-dark text-gray-100 flex flex-col selection:bg-brand-orange selection:text-white">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-brand-dark text-gray-100 flex flex-col selection:bg-brand-orange selection:text-white">
       
       {/* 1. Header/Navigation Bar */}
       <header className="sticky top-0 z-50 glassmorphism shadow-lg border-b border-white/5 transition-all duration-300">
@@ -198,12 +198,16 @@ export default function App() {
           
           {/* Logo & Identity */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-orange to-brand-gold flex items-center justify-center font-black text-white text-base tracking-wider shadow-lg shadow-brand-orange/20 animate-pulse">
-              A
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-orange to-brand-gold flex items-center justify-center font-black text-white text-base tracking-wider shadow-lg shadow-brand-orange/20 animate-pulse overflow-hidden">
+              {config?.theme?.logoImageUrl ? (
+                <img src={config.theme.logoImageUrl} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              ) : (
+                config?.theme?.logoLetter || 'A'
+              )}
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col text-right">
               <span className="text-sm md:text-base font-black text-white tracking-widest uppercase leading-none">
-                {t.navBrand}
+                {isRtl ? (config?.theme?.logoNameAr || t.navBrand) : (config?.theme?.logoNameEn || t.navBrand)}
               </span>
               <span className="text-[9px] text-brand-orange font-bold uppercase tracking-widest mt-1">
                 {isRtl ? 'وكالة إبداعية متكاملة' : 'Creative Agency'}
@@ -976,7 +980,7 @@ export default function App() {
       </main>
 
       {/* FOOTER */}
-      <Footer t={t} isRtl={isRtl} onNavigate={setActiveSection} />
+      <Footer t={t} isRtl={isRtl} onNavigate={setActiveSection} theme={config?.theme} />
 
       {/* ADMIN CONTROL PANEL OVERLAY */}
       <AdminDashboard

@@ -52,7 +52,8 @@ export default function AdminDashboard({
     secondaryColor: "#e2b053",
     logoLetter: "A",
     logoNameAr: "التا للإعلان",
-    logoNameEn: "ALTA ADVERTISING"
+    logoNameEn: "ALTA ADVERTISING",
+    logoImageUrl: ""
   });
 
   const [translationsAr, setTranslationsAr] = useState<any>({});
@@ -111,7 +112,16 @@ export default function AdminDashboard({
   // Initialize config state when opened or currentConfig changes
   useEffect(() => {
     if (currentConfig) {
-      if (currentConfig.theme) setTheme({ ...currentConfig.theme });
+      if (currentConfig.theme) {
+        setTheme({
+          primaryColor: currentConfig.theme.primaryColor || "#ff5c35",
+          secondaryColor: currentConfig.theme.secondaryColor || "#e2b053",
+          logoLetter: currentConfig.theme.logoLetter || "A",
+          logoNameAr: currentConfig.theme.logoNameAr || "التا للإعلان",
+          logoNameEn: currentConfig.theme.logoNameEn || "ALTA ADVERTISING",
+          logoImageUrl: currentConfig.theme.logoImageUrl || ""
+        });
+      }
       if (currentConfig.translations) {
         setTranslationsAr({ ...currentConfig.translations.ar });
         setTranslationsEn({ ...currentConfig.translations.en });
@@ -419,8 +429,12 @@ export default function AdminDashboard({
           <div className="max-w-md w-full bg-brand-slate border border-white/10 rounded-2xl p-8 shadow-2xl space-y-6">
             
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-orange to-brand-gold flex items-center justify-center font-black text-white text-2xl mx-auto shadow-lg shadow-brand-orange/20 animate-pulse">
-                {theme.logoLetter}
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-orange to-brand-gold flex items-center justify-center font-black text-white text-2xl mx-auto shadow-lg shadow-brand-orange/20 animate-pulse overflow-hidden">
+                {theme.logoImageUrl ? (
+                  <img src={theme.logoImageUrl} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  theme.logoLetter
+                )}
               </div>
               <h2 className="text-xl font-black text-white">{isRtl ? "تسجيل دخول لوحة التحكم" : "Administrator Sign In"}</h2>
               <p className="text-xs text-gray-400 leading-relaxed">
@@ -658,6 +672,19 @@ export default function AdminDashboard({
                       value={theme.logoLetter}
                       onChange={(e) => setTheme({ ...theme, logoLetter: e.target.value })}
                       className="w-full bg-brand-dark border border-white/10 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none text-center font-bold"
+                    />
+                  </div>
+
+                  {/* Logo Image URL */}
+                  <div className="bg-brand-dark/40 border border-white/5 p-4 rounded-xl space-y-3">
+                    <label className="block text-xs font-bold text-gray-300">{isRtl ? "رابط صورة الشعار الخارجية (Logo Image URL)" : "External Logo Image URL"}</label>
+                    <input
+                      id="logo-image-url-input"
+                      type="text"
+                      placeholder="https://example.com/logo.png"
+                      value={theme.logoImageUrl || ""}
+                      onChange={(e) => setTheme({ ...theme, logoImageUrl: e.target.value })}
+                      className="w-full bg-brand-dark border border-white/10 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none placeholder-gray-600"
                     />
                   </div>
 

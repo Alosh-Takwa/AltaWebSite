@@ -6,15 +6,21 @@ interface FooterProps {
   t: TranslationSet;
   isRtl: boolean;
   onNavigate: (section: any) => void;
+  theme?: {
+    logoLetter?: string;
+    logoImageUrl?: string;
+    logoNameAr?: string;
+    logoNameEn?: string;
+  };
 }
 
-export default function Footer({ t, isRtl, onNavigate }: FooterProps) {
+export default function Footer({ t, isRtl, onNavigate, theme }: FooterProps) {
   const handleScrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <footer className="bg-[#060910] border-t border-white/5 relative overflow-hidden">
+    <footer className="bg-[#060910] border-t border-white/5 relative overflow-hidden text-right">
       {/* Absolute glow spots inside footer */}
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-brand-orange/5 rounded-full filter blur-[120px] pointer-events-none"></div>
       
@@ -27,11 +33,15 @@ export default function Footer({ t, isRtl, onNavigate }: FooterProps) {
           <div className="md:col-span-5 space-y-5">
             <div className="flex items-center gap-3">
               {/* Logo icon */}
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-orange to-brand-gold flex items-center justify-center font-black text-white text-lg tracking-wider shadow-lg shadow-brand-orange/10">
-                A
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-orange to-brand-gold flex items-center justify-center font-black text-white text-lg tracking-wider shadow-lg shadow-brand-orange/10 overflow-hidden">
+                {theme?.logoImageUrl ? (
+                  <img src={theme.logoImageUrl} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  theme?.logoLetter || 'A'
+                )}
               </div>
               <span className="text-xl font-black text-white tracking-wider uppercase">
-                {t.navBrand}
+                {isRtl ? (theme?.logoNameAr || t.navBrand) : (theme?.logoNameEn || t.navBrand)}
               </span>
             </div>
             
