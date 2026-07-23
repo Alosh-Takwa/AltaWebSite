@@ -10,9 +10,14 @@ interface ReachCalculatorProps {
 export default function ReachCalculator({ t, isRtl }: ReachCalculatorProps) {
   const [budget, setBudget] = useState(5000000); // 5 Million SYP as default
   const [currency, setCurrency] = useState<'SYP' | 'USD'>('SYP');
-  const [channel, setChannel] = useState<'outdoor' | 'digital' | 'video' | 'branding'>('outdoor');
+  const channel = 'digital';
   const [targetCity, setTargetCity] = useState<string>('all');
   
+  // New social media sponsored settings
+  const [isSponsoredAd, setIsSponsoredAd] = useState<boolean>(true);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['facebook', 'instagram', 'tiktok']);
+  const [adObjective, setAdObjective] = useState<'awareness' | 'traffic' | 'engagement' | 'leads'>('awareness');
+
   const [metrics, setMetrics] = useState({
     impressions: 0,
     reach: 0,
@@ -45,45 +50,137 @@ export default function ReachCalculator({ t, isRtl }: ReachCalculatorProps) {
     const selectedCity = cities.find(c => c.id === targetCity) || cities[0];
     const mult = selectedCity.multiplier;
 
-    let impressionsFactor = 10;
-    let clickFactor = 0.05;
-    let conversionFactor = 0.015;
+    let impressions = 0;
+    let reach = 0;
+    let clicks = 0;
+    let conversion = 0;
 
-    switch (channel) {
-      case 'outdoor':
-        impressionsFactor = 150; // Billboards have huge passive impressions
-        clickFactor = 0.005;     // Very low direct "click" but high mindshare
-        conversionFactor = 0.008;
-        break;
-      case 'digital':
-        impressionsFactor = 80;
-        clickFactor = 0.06;
-        conversionFactor = 0.022;
-        break;
-      case 'video':
-        impressionsFactor = 120; // Video has high impact
-        clickFactor = 0.04;
-        conversionFactor = 0.03;
-        break;
-      case 'branding':
-        impressionsFactor = 40;  // Long-term branding impressions
-        clickFactor = 0.03;
-        conversionFactor = 0.04; // Very high premium conversion
-        break;
+    if (isSponsoredAd) {
+      // Detailed sponsored ad calculation
+      // Calculate blended CPM and CTR
+      let totalCpm = 0;
+      let totalCtr = 0;
+      let totalConv = 0;
+      
+      const activePlatforms = selectedPlatforms.length > 0 ? selectedPlatforms : ['facebook'];
+
+      activePlatforms.forEach(p => {
+        let baseSyriaCpm = 0.2;
+        let baseGccCpm = 3.0;
+        let baseCtr = 0.015;
+        let baseConv = 0.02;
+
+        switch (p) {
+          case 'facebook':
+            baseSyriaCpm = 0.18;
+            baseGccCpm = 2.5;
+            baseCtr = 0.016;
+            baseConv = 0.02;
+            break;
+          case 'instagram':
+            baseSyriaCpm = 0.28;
+            baseGccCpm = 4.0;
+            baseCtr = 0.012;
+            baseConv = 0.022;
+            break;
+          case 'tiktok':
+            baseSyriaCpm = 0.22;
+            baseGccCpm = 3.0;
+            baseCtr = 0.018;
+            baseConv = 0.018;
+            break;
+          case 'youtube':
+            baseSyriaCpm = 0.50;
+            baseGccCpm = 4.5;
+            baseCtr = 0.009;
+            baseConv = 0.025;
+            break;
+          case 'linkedin':
+            baseSyriaCpm = 1.50;
+            baseGccCpm = 12.0;
+            baseCtr = 0.007;
+            baseConv = 0.035;
+            break;
+        }
+
+        let platformCpm = 0.2;
+        if (targetCity === 'arab') {
+          platformCpm = baseGccCpm;
+        } else if (targetCity === 'all') {
+          platformCpm = (baseSyriaCpm * 0.7) + (baseGccCpm * 0.3);
+        } else {
+          // Syrian city. We apply the city multiplier inversely to make CPM lower in higher density
+          platformCpm = baseSyriaCpm / mult;
+        }
+
+        totalCpm += platformCpm;
+        totalCtr += baseCtr;
+        totalConv += baseConv;
+      });
+
+      // Blended stats
+      const avgCpm = totalCpm / activePlatforms.length;
+      const avgCtr = totalCtr / activePlatforms.length;
+      const avgConv = totalConv / activePlatforms.length;
+
+      // Apply objective multipliers
+      let objCpmMult = 1.0;
+      let objCtrMult = 1.0;
+      let objConvMult = 1.0;
+
+      switch (adObjective) {
+        case 'awareness':
+          objCpmMult = 0.7; // Cheaper views
+          objCtrMult = 0.8;
+          objConvMult = 0.6;
+          break;
+        case 'traffic':
+          objCpmMult = 1.2;
+          objCtrMult = 2.2; // High CTR
+          objConvMult = 1.2;
+          break;
+        case 'engagement':
+          objCpmMult = 1.0;
+          objCtrMult = 1.3;
+          objConvMult = 1.0;
+          break;
+        case 'leads':
+          objCpmMult = 1.8; // Expensive CPM
+          objCtrMult = 1.6;
+          objConvMult = 2.8; // High conversions
+          break;
+      }
+
+      // Calculations
+      const blendedCpm = avgCpm * objCpmMult;
+      const blendedCtr = avgCtr * objCtrMult;
+      const blendedConv = avgConv * objConvMult;
+
+      // Total impressions = (Budget / CPM) * 1000
+      impressions = (normalizedBudgetUsd / blendedCpm) * 1000;
+      // Reach is 70% of impressions (unique viewers)
+      reach = impressions * 0.70;
+      // Clicks / Engagements
+      clicks = impressions * blendedCtr;
+      // Conversions
+      conversion = clicks * blendedConv;
+
+    } else {
+      // Digital, but organic / influencer based
+      const baseImpressions = normalizedBudgetUsd * 80 * mult;
+      impressions = baseImpressions;
+      reach = baseImpressions * 0.65;
+      clicks = reach * 0.06;
+      conversion = clicks * 0.022;
     }
 
-    const baseImpressions = normalizedBudgetUsd * impressionsFactor * mult;
-    const baseReach = baseImpressions * 0.65; // Reach is a subset of unique views
-    const baseClicks = baseReach * clickFactor;
-    const baseConversions = baseClicks * conversionFactor;
-
     setMetrics({
-      impressions: Math.round(baseImpressions),
-      reach: Math.round(baseReach),
-      clicks: Math.round(baseClicks),
-      conversion: Math.round(baseConversions)
+      impressions: Math.round(impressions),
+      reach: Math.round(reach),
+      clicks: Math.round(clicks),
+      conversion: Math.round(conversion)
     });
-  }, [budget, currency, channel, targetCity]);
+  }, [budget, currency, targetCity, isSponsoredAd, selectedPlatforms, adObjective]);
 
   const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setBudget(Number(e.target.value));
@@ -197,34 +294,115 @@ export default function ReachCalculator({ t, isRtl }: ReachCalculatorProps) {
               </select>
             </div>
 
-            {/* Channel Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">
-                {t.calcLabelType}
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { id: 'outdoor', label: t.portTagOutdoor, desc: isRtl ? 'شوارع كبرى وتأثير طرق عريض' : 'High exposure outdoor' },
-                  { id: 'digital', label: t.portTagDigital, desc: isRtl ? 'فيسبوك وتيك توك ممول' : 'Social Ads & influencers' },
-                  { id: 'video', label: t.portTagVideo, desc: isRtl ? 'إنتاج سينمائي عالي الجودة' : 'Cinematic commercial production' },
-                  { id: 'branding', label: t.portTagBrand, desc: isRtl ? 'هوية متكاملة وصياغة لوغو' : 'Complete packaging & logos' }
-                ].map((item) => (
+            {/* DIGITAL OPTIONS FOR SPONSORED ADS */}
+            <div className="p-4 rounded-xl bg-brand-dark/60 border border-white/10 space-y-4 animate-fade-in">
+              
+              {/* 1. Toggle between Sponsored Ad & Organic/Influencer */}
+              <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                <span className="text-xs font-bold text-gray-300">
+                  {isRtl ? 'نوع الترويج الرقمي:' : 'Digital Promotion Type:'}
+                </span>
+                <div className="flex bg-brand-slate/60 p-0.5 rounded-lg border border-white/5">
                   <button
-                    id={`calc-channel-btn-${item.id}`}
-                    key={item.id}
+                    id="campaign-sponsored-btn"
                     type="button"
-                    onClick={() => setChannel(item.id as any)}
-                    className={`p-4 rounded-xl text-right transition-all duration-300 border ${
-                      channel === item.id
-                        ? 'bg-brand-orange/10 border-brand-orange/80 text-white'
-                        : 'bg-brand-dark/40 border-white/5 text-gray-400 hover:border-white/10 hover:text-white'
+                    onClick={() => setIsSponsoredAd(true)}
+                    className={`px-3 py-1 text-[10px] font-bold rounded-md transition ${
+                      isSponsoredAd ? 'bg-brand-orange text-white' : 'text-gray-400 hover:text-white'
                     }`}
                   >
-                    <div className="font-bold text-sm text-white mb-1">{item.label}</div>
-                    <div className="text-[10px] text-gray-400 leading-tight">{item.desc}</div>
+                    {isRtl ? 'إعلان ممول' : 'Sponsored Ad'}
                   </button>
-                ))}
+                  <button
+                    id="campaign-organic-btn"
+                    type="button"
+                    onClick={() => setIsSponsoredAd(false)}
+                    className={`px-3 py-1 text-[10px] font-bold rounded-md transition ${
+                      !isSponsoredAd ? 'bg-brand-orange text-white' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {isRtl ? 'عضوي ومؤثرين' : 'Organic/Influencers'}
+                  </button>
+                </div>
               </div>
+
+              {isSponsoredAd ? (
+                <>
+                  {/* 2. Platform Multi-Select */}
+                  <div className="space-y-2">
+                    <label className="block text-[11px] font-bold text-gray-400">
+                      {isRtl ? 'المنصات الممولة المستهدفة:' : 'Targeted Sponsored Platforms:'}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: 'facebook', name: 'Facebook', labelAr: 'فيسبوك' },
+                        { id: 'instagram', name: 'Instagram', labelAr: 'إنستغرام' },
+                        { id: 'tiktok', name: 'TikTok', labelAr: 'تيك توك' },
+                        { id: 'youtube', name: 'YouTube', labelAr: 'يوتيوب' },
+                        { id: 'linkedin', name: 'LinkedIn', labelAr: 'لينكد إن' }
+                      ].map(plat => {
+                        const active = selectedPlatforms.includes(plat.id);
+                        return (
+                          <button
+                            id={`platform-select-btn-${plat.id}`}
+                            key={plat.id}
+                            type="button"
+                            onClick={() => {
+                              if (active) {
+                                // Keep at least one platform selected
+                                if (selectedPlatforms.length > 1) {
+                                  setSelectedPlatforms(selectedPlatforms.filter(p => p !== plat.id));
+                                }
+                              } else {
+                                setSelectedPlatforms([...selectedPlatforms, plat.id]);
+                              }
+                            }}
+                            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border ${
+                              active
+                                ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/10'
+                                : 'bg-brand-dark/40 border-white/5 text-gray-400 hover:border-white/10 hover:text-white'
+                            }`}
+                          >
+                            <span>{isRtl ? plat.labelAr : plat.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 3. Campaign Objective Select */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-gray-400">
+                      {isRtl ? 'الهدف الإعلاني الممول:' : 'Sponsored Campaign Goal:'}
+                    </label>
+                    <select
+                      id="ad-objective-select"
+                      value={adObjective}
+                      onChange={(e) => setAdObjective(e.target.value as any)}
+                      className="w-full bg-brand-dark/40 border border-white/5 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-orange text-xs"
+                    >
+                      <option value="awareness" className="bg-brand-slate text-white">
+                        {isRtl ? 'زيادة الوعي والانتشار (أقصى مشاهدات)' : 'Brand Awareness (Max Impressions)'}
+                      </option>
+                      <option value="traffic" className="bg-brand-slate text-white">
+                        {isRtl ? 'جلب الزيارات ونقرات الروابط (توجيه لموقعك)' : 'Website Traffic (Max Link Clicks)'}
+                      </option>
+                      <option value="engagement" className="bg-brand-slate text-white">
+                        {isRtl ? 'التفاعل والمشاركات (زيادة المتابعين)' : 'Active Engagement (Max Likes/Shares)'}
+                      </option>
+                      <option value="leads" className="bg-brand-slate text-white">
+                        {isRtl ? 'العملاء والمبيعات (الحصول على مشترين)' : 'Leads & Sales (Max Conversions)'}
+                      </option>
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <div className="text-[11px] text-gray-400 bg-brand-dark/20 p-2.5 rounded-lg border border-white/5 leading-relaxed">
+                  {isRtl 
+                    ? 'الحملات غير الممولة تعتمد على صناعة المحتوى السوري الفكاهي، والتعاون مع المؤثرين لزيادة الوصول الطبيعي دون كلف دفع مباشرة للمنصات.' 
+                    : 'Organic campaigns rely on creating viral localized content, and partnering with top regional influencers to boost natural reach without pay-to-play platform costs.'}
+                </div>
+              )}
             </div>
 
           </div>
@@ -335,6 +513,58 @@ export default function ReachCalculator({ t, isRtl }: ReachCalculatorProps) {
                 })}
               </div>
             </div>
+
+            {/* Platform-specific breakdown when Sponsored is active */}
+            {isSponsoredAd && (
+              <div className="mt-6 bg-brand-dark/40 p-5 rounded-xl border border-white/5 space-y-3.5 animate-fade-in">
+                <span className="text-xs font-bold text-gray-300 block">
+                  {isRtl ? 'توزيع الميزانية والانتشار التقريبي لكل منصة ممولة:' : 'Approximate Budget Distribution & Reach per Platform:'}
+                </span>
+                
+                <div className="space-y-3.5">
+                  {[
+                    { id: 'facebook', name: 'Facebook', color: 'bg-blue-600', textAr: 'فيسبوك' },
+                    { id: 'instagram', name: 'Instagram', color: 'bg-pink-600', textAr: 'إنستغرام' },
+                    { id: 'tiktok', name: 'TikTok', color: 'bg-black border border-white/20', textAr: 'تيك توك' },
+                    { id: 'youtube', name: 'YouTube', color: 'bg-red-600', textAr: 'يوتيوب' },
+                    { id: 'linkedin', name: 'LinkedIn', color: 'bg-blue-800', textAr: 'لينكد إن' }
+                  ]
+                  .filter(p => selectedPlatforms.includes(p.id))
+                  .map(p => {
+                    const share = 1 / Math.max(selectedPlatforms.length, 1);
+                    const platImpressions = metrics.impressions * share;
+                    const platReach = metrics.reach * share;
+                    const percent = Math.round(share * 100);
+                    
+                    return (
+                      <div key={p.id} className="space-y-1.5">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-bold text-white flex items-center gap-2">
+                            <span className={`w-2.5 h-2.5 rounded-full ${p.color}`}></span>
+                            <span>{isRtl ? p.textAr : p.name}</span>
+                            <span className="text-[10px] text-gray-500 font-normal font-mono">({percent}%)</span>
+                          </span>
+                          <span className="text-gray-400 font-mono text-[11px]">
+                            {isRtl ? 'الوصول: ' : 'Reach: '}
+                            <span className="text-brand-gold font-bold">{formatNumber(platReach)}</span>
+                            <span className="mx-2 text-gray-600">|</span>
+                            {isRtl ? 'الظهور: ' : 'Imps: '}
+                            <span className="text-white font-medium">{formatNumber(platImpressions)}</span>
+                          </span>
+                        </div>
+                        {/* Progress Bar */}
+                        <div className="w-full bg-brand-dark/80 h-2 rounded-full overflow-hidden p-[1px] border border-white/5">
+                          <div 
+                            className={`h-full ${p.color} rounded-full transition-all duration-500`}
+                            style={{ width: `${percent}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">

@@ -32,6 +32,68 @@ import {
   Settings
 } from 'lucide-react';
 
+const updatePageMeta = (section: string, isRtl: boolean) => {
+  let title = "";
+  let description = "";
+
+  switch (section) {
+    case 'generator':
+      title = isRtl ? "مختبر الحملات الإعلانية بالذكاء الاصطناعي | التا للإعلان" : "AI Campaign Generator Lab | Alta Advertising";
+      description = isRtl 
+        ? "جرب مختبر التوليد الذكي للحملات الإعلانية والتسويقية المتكاملة بروح الهوية السورية من وكالة التا للإعلان." 
+        : "Experience the smart AI campaign generator for comprehensive marketing campaigns with Syrian cultural relevance.";
+      break;
+    case 'services':
+      title = isRtl ? "خدماتنا الإعلانية والترويجية المتكاملة | التا للإعلان" : "Our Integrated Advertising Services | Alta Advertising";
+      description = isRtl 
+        ? "نقدم خدمات اللوحات الطرقية الفاخرة في دمشق، التسويق الرقمي، بناء الهوية البصرية، والإنتاج التلفزيوني والسينمائي." 
+        : "We offer premium outdoor billboards in Damascus, digital marketing, visual branding, and cinematic TV commercials.";
+      break;
+    case 'process':
+      title = isRtl ? "منهجية العمل وصناعة الأثر الإعلاني | التا للإعلان" : "Our Creative Process & Methodology | Alta Advertising";
+      description = isRtl 
+        ? "اكتشف كيف نصنع الدهشة ونقود التأثير الإعلاني بدءاً من جلسات العصف الإبداعي إلى التنفيذ والتركيب الميداني." 
+        : "Discover how we craft awe and drive marketing impact from creative brainstorming sessions to live field execution.";
+      break;
+    case 'calculator':
+      title = isRtl ? "حاسبة الوصول والانتشار الإعلانية الذكية | التا للإعلان" : "Smart Reach & Exposure Calculator | Alta Advertising";
+      description = isRtl 
+        ? "احسب نسبة المشاهدات المباشرة والأثر الإعلاني لحملتك في أهم مناطق دمشق وطرقاتها الحيوية كالمزة والبرامكة." 
+        : "Calculate live views and estimated ad impact for your campaigns across prime Damascus roadways.";
+      break;
+    case 'portfolio':
+      title = isRtl ? "معرض أعمالنا الإبداعية وقصص النجاح | التا للإعلان" : "Our Portfolio & Creative Case Studies | Alta Advertising";
+      description = isRtl 
+        ? "تصفح قصص النجاح الإعلانية والحملات الرائدة التي أطلقناها في الشارع والويب السوري لكبرى العلامات التجارية." 
+        : "Browse successful advertising campaigns and creative billboard installations launched for leading Syrian brands.";
+      break;
+    case 'contact':
+      title = isRtl ? "تواصل معنا واحجز حملتك الإعلانية | التا للإعلان" : "Contact Us - Book Your Campaign | Alta Advertising";
+      description = isRtl 
+        ? "تواصل مباشرة مع فريق التا للإعلان لطلب استشارات مجانية، حجز اللوحات، أو الترويج الرقمي والإنتاج السينمائي." 
+        : "Contact our media experts directly to book billboards, ask for free consulting, or start high-impact marketing.";
+      break;
+    case 'home':
+    default:
+      title = isRtl ? "وكالة التا للإعلان | نصنع الدهشة ونقود التأثير" : "Alta Advertising Agency | We Craft Awe & Drive Impact";
+      description = isRtl 
+        ? "الوكالة الإعلانية الأولى في سوريا للوحات الطرقية المتميزة في دمشق، التسويق الرقمي المبتكر، وصناعة الهويات الفاخرة." 
+        : "Syria's premier creative agency for premium outdoor billboards, innovative digital campaigns, and luxury branding.";
+      break;
+  }
+
+  document.title = title;
+
+  // Update meta description
+  let metaDesc = document.querySelector('meta[name="description"]');
+  if (!metaDesc) {
+    metaDesc = document.createElement('meta');
+    metaDesc.setAttribute('name', 'description');
+    document.head.appendChild(metaDesc);
+  }
+  metaDesc.setAttribute('content', description);
+};
+
 export default function App() {
   const [lang, setLang] = useState<'ar' | 'en'>('ar');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -85,6 +147,36 @@ export default function App() {
     document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
   }, [lang, isRtl]);
+
+  // Synchronize state with URL hash for separate shareable pages
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      const validSections: ActiveSection[] = ['home', 'generator', 'services', 'process', 'calculator', 'portfolio', 'contact'];
+      if (validSections.includes(hash as ActiveSection)) {
+        setActiveSection(hash as ActiveSection);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (!hash) {
+        setActiveSection('home');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
+    // Run on initial mount
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Update URL hash and document metadata when activeSection updates
+  useEffect(() => {
+    const currentHash = window.location.hash.replace('#', '');
+    if (currentHash !== activeSection) {
+      window.location.hash = activeSection;
+    }
+    updatePageMeta(activeSection, isRtl);
+  }, [activeSection, isRtl]);
 
   const toggleLanguage = () => {
     setLang(prev => (prev === 'ar' ? 'en' : 'ar'));
@@ -237,10 +329,6 @@ export default function App() {
                 id={`nav-item-${item.id}`}
                 key={item.id}
                 onClick={() => {
-                  const targetEl = document.getElementById(`${item.id}-section`) || document.getElementById(`ai-generator-section`);
-                  if (targetEl) {
-                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }
                   setActiveSection(item.id as any);
                 }}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer ${
@@ -278,13 +366,13 @@ export default function App() {
             </button>
 
             {/* Quick Consultation CTA */}
-            <a
+            <button
               id="header-cta-btn"
-              href="#contact-section"
-              className="hidden sm:inline-flex px-4 py-2 rounded-lg bg-gradient-to-r from-brand-orange to-brand-orange-light text-white text-xs font-bold shadow-lg shadow-brand-orange/10 hover:shadow-brand-orange/20 transition-all duration-300 hover:-translate-y-0.5 text-center"
+              onClick={() => setActiveSection('contact')}
+              className="hidden sm:inline-flex px-4 py-2 rounded-lg bg-gradient-to-r from-brand-orange to-brand-orange-light text-white text-xs font-bold shadow-lg shadow-brand-orange/10 hover:shadow-brand-orange/20 transition-all duration-300 hover:-translate-y-0.5 text-center cursor-pointer"
             >
               {isRtl ? 'اطلب استشارة' : 'Free Consultation'}
-            </a>
+            </button>
 
             {/* Mobile Menu Toggle */}
             <button
@@ -316,10 +404,6 @@ export default function App() {
                 id={`mobile-nav-${item.id}`}
                 key={item.id}
                 onClick={() => {
-                  const targetEl = document.getElementById(`${item.id}-section`) || document.getElementById(`ai-generator-section`);
-                  if (targetEl) {
-                    targetEl.scrollIntoView({ behavior: 'smooth' });
-                  }
                   setActiveSection(item.id as any);
                   setMobileMenuOpen(false);
                 }}
@@ -335,14 +419,16 @@ export default function App() {
           </div>
 
           <div className="pt-6 border-t border-white/5 space-y-4">
-            <a
+            <button
               id="mobile-menu-cta"
-              href="#contact-section"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full block text-center py-3.5 bg-gradient-to-r from-brand-orange to-brand-orange-light text-white text-sm font-bold rounded-xl"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setActiveSection('contact');
+              }}
+              className="w-full block text-center py-3.5 bg-gradient-to-r from-brand-orange to-brand-orange-light text-white text-sm font-bold rounded-xl cursor-pointer"
             >
               {isRtl ? 'اطلب استشارة مجانية الآن' : 'Free Consultation'}
-            </a>
+            </button>
           </div>
         </div>
       )}
@@ -350,8 +436,11 @@ export default function App() {
       {/* 2. Main Content Body */}
       <main className="flex-grow">
         
-        {/* HERO SECTION */}
-        <section id="home-section" className="relative py-20 lg:py-32 px-4 md:px-8 max-w-7xl mx-auto overflow-hidden">
+        {/* HOME PAGE */}
+        {activeSection === 'home' && (
+          <div className="animate-fade-in">
+            {/* HERO SECTION */}
+            <section id="home-section" className="relative py-20 lg:py-32 px-4 md:px-8 max-w-7xl mx-auto overflow-hidden">
           {/* Ambient graphics */}
           <div className="glow-spot-1 -top-20 right-10"></div>
           <div className="glow-spot-2 top-40 left-10"></div>
@@ -383,22 +472,22 @@ export default function App() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <a
+                <button
                   id="hero-ai-gen-btn"
-                  href="#ai-generator-section"
-                  className="px-8 py-4 bg-gradient-to-r from-brand-orange to-brand-orange-light text-white font-bold text-sm rounded-xl shadow-lg shadow-brand-orange/20 hover:shadow-brand-orange/40 hover:-translate-y-0.5 transition-all duration-300 text-center flex items-center justify-center gap-2 group"
+                  onClick={() => setActiveSection('generator')}
+                  className="px-8 py-4 bg-gradient-to-r from-brand-orange to-brand-orange-light text-white font-bold text-sm rounded-xl shadow-lg shadow-brand-orange/20 hover:shadow-brand-orange/40 hover:-translate-y-0.5 transition-all duration-300 text-center flex items-center justify-center gap-2 group cursor-pointer"
                 >
                   <Sparkles size={16} />
                   <span>{t.heroBtnGen}</span>
-                </a>
-                <a
+                </button>
+                <button
                   id="hero-portfolio-btn"
-                  href="#portfolio-section"
-                  className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-bold text-sm rounded-xl border border-white/5 hover:border-white/10 transition-all duration-300 text-center flex items-center justify-center gap-1"
+                  onClick={() => setActiveSection('portfolio')}
+                  className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-bold text-sm rounded-xl border border-white/5 hover:border-white/10 transition-all duration-300 text-center flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <span>{t.heroBtnPort}</span>
                   {isRtl ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-                </a>
+                </button>
               </div>
             </div>
 
@@ -479,14 +568,22 @@ export default function App() {
             ))}
           </div>
         </section>
+          </div>
+        )}
 
         {/* AI GENERATOR LAB */}
-        <section className="bg-brand-slate/20 border-y border-white/5">
-          <CampaignGenerator t={t} isRtl={isRtl} />
-        </section>
+        {activeSection === 'generator' && (
+          <div className="animate-fade-in">
+            <section className="bg-brand-slate/20 border-y border-white/5">
+              <CampaignGenerator t={t} isRtl={isRtl} />
+            </section>
+          </div>
+        )}
 
         {/* SERVICES SECTION */}
-        <section id="services-section" className="relative py-24 px-4 md:px-8 max-w-7xl mx-auto z-10">
+        {activeSection === 'services' && (
+          <div className="animate-fade-in">
+            <section id="services-section" className="relative py-24 px-4 md:px-8 max-w-7xl mx-auto z-10">
           <div className="text-center max-w-3xl mx-auto mb-20">
             <span className="text-xs font-bold uppercase tracking-wider text-brand-orange bg-brand-orange/10 px-3 py-1.5 rounded-full">
               {isRtl ? 'حلول إبداعية متكاملة' : '360° Creative Solutions'}
@@ -585,9 +682,13 @@ export default function App() {
             })()}
           </div>
         </section>
+          </div>
+        )}
 
         {/* METHODOLOGY / PROCESS SECTION */}
-        <section id="process-section" className="bg-brand-slate/20 py-24 border-y border-white/5 relative overflow-hidden">
+        {activeSection === 'process' && (
+          <div className="animate-fade-in">
+            <section id="process-section" className="bg-brand-slate/20 py-24 border-y border-white/5 relative overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 md:px-8 z-10 relative">
             
             <div className="text-center max-w-3xl mx-auto mb-20">
@@ -641,14 +742,22 @@ export default function App() {
 
           </div>
         </section>
+          </div>
+        )}
 
         {/* REACH ESTIMATOR SECTION */}
-        <section className="relative overflow-hidden">
-          <ReachCalculator t={t} isRtl={isRtl} />
-        </section>
+        {activeSection === 'calculator' && (
+          <div className="animate-fade-in">
+            <section className="relative overflow-hidden">
+              <ReachCalculator t={t} isRtl={isRtl} />
+            </section>
+          </div>
+        )}
 
         {/* PORTFOLIO GALLERY */}
-        <section id="portfolio-section" className="bg-brand-slate/10 py-24 border-t border-white/5">
+        {activeSection === 'portfolio' && (
+          <div className="animate-fade-in">
+            <section id="portfolio-section" className="bg-brand-slate/10 py-24 border-t border-white/5">
           <div className="max-w-7xl mx-auto px-4 md:px-8">
             
             {/* Header and filters */}
@@ -800,22 +909,28 @@ export default function App() {
                   >
                     {isRtl ? 'إغلاق النافذة' : 'Close Detail'}
                   </button>
-                  <a
+                  <button
                     id="modal-cta-btn"
-                    href="#contact-section"
-                    onClick={() => setSelectedProject(null)}
-                    className="px-5 py-2.5 bg-brand-orange hover:bg-brand-orange-light text-white rounded-lg text-xs font-bold transition"
+                    onClick={() => {
+                      setSelectedProject(null);
+                      setActiveSection('contact');
+                    }}
+                    className="px-5 py-2.5 bg-brand-orange hover:bg-brand-orange-light text-white rounded-lg text-xs font-bold transition cursor-pointer"
                   >
                     {isRtl ? 'طلب حملة مماثلة لمشروعي' : 'Request Similar Campaign'}
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         )}
+          </div>
+        )}
 
         {/* CONTACT US FORM SECTION */}
-        <section id="contact-section" className="relative py-24 px-4 md:px-8 max-w-7xl mx-auto z-10">
+        {activeSection === 'contact' && (
+          <div className="animate-fade-in">
+            <section id="contact-section" className="relative py-24 px-4 md:px-8 max-w-7xl mx-auto z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
             
             {/* Context/Coordinates info Card */}
@@ -983,6 +1098,8 @@ export default function App() {
             </div>
           </div>
         </section>
+          </div>
+        )}
 
       </main>
 

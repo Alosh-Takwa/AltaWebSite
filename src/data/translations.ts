@@ -163,8 +163,8 @@ export const arTranslations: TranslationSet = {
   proc4Title: "4. الإطلاق وقياس تصاعد الأثر",
   proc4Desc: "نطلق الحملة بالتوقيت المثالي عبر اللوحات الطرقية ومنصات الويب، ونتابع التفاعل المباشر وارتفاع المبيعات وصدى العلامة.",
 
-  calcTitle: "مخطط تقدير الوصول والانتشار",
-  calcSub: "حدد نوع الحملة وميزانيتك الإعلانية المقترحة لحساب مدى الانتشار والمشاهدات المقدرة في المدن السورية الكبرى.",
+  calcTitle: "مخطط تقدير الحملات الرقمية والانتشار",
+  calcSub: "حدد ميزانيتك الإعلانية لحساب مدى الانتشار الرقمي والمشاهدات التقديرية الممولة في المدن السورية وأسواق الخليج.",
   calcLabelType: "قناة الإطلاق الإعلاني المفضلة",
   calcLabelBudget: "الميزانية المخصصة للحملة بالليرة السورية أو الدولار",
   calcEstReach: "الوصول التقديري المتوقع لجمهورك النشط",
@@ -264,8 +264,8 @@ export const enTranslations: TranslationSet = {
   proc4Title: "4. Launch & Amplified Influence",
   proc4Desc: "We launch at the perfect time across premium billboards and digital web networks, closely tracking live feedback, brand sentiment, and rising sales.",
 
-  calcTitle: "Reach & Exposure Estimator",
-  calcSub: "Set your preferred campaign channel and budget to estimate the potential visibility and audience reach in major Syrian metropolitan areas.",
+  calcTitle: "Digital Reach & Exposure Estimator",
+  calcSub: "Set your budget to estimate the potential digital visibility and sponsored audience reach in Syrian and Arab markets.",
   calcLabelType: "Primary Launch Channel",
   calcLabelBudget: "Estimated Campaign Budget",
   calcEstReach: "Potential Target Audience Reach",
